@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+data/*.sqlite*
+data/*.json
+data/*.log
+config.yaml
+.env
+!data/.gitkeep

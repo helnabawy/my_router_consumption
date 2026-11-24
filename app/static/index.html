@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WE Monitor</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <h1>WE Monitor</h1>
+  <div id="pills" class="pills" aria-live="polite"></div>
+  <button id="btn-settings" class="btn ghost">Settings</button>
+</header>
+
+<main class="viz-root">
+  <div id="notice" class="notice" hidden></div>
+
+  <!-- Quota + live speed -->
+  <section class="grid two">
+    <article class="card" id="quota-card">
+      <div class="card-head">
+        <h2>Monthly quota</h2>
+        <button id="btn-reading" class="btn">Add WE reading</button>
+      </div>
+      <div class="hero"><span id="q-used">–</span><span class="hero-unit" id="q-of"></span></div>
+      <div class="meter" role="img" id="q-meter" aria-label="Quota used"><div id="q-fill"></div></div>
+      <p class="sub" id="q-basis"></p>
+      <div class="tiles">
+        <div class="tile"><span class="tile-label">Days left</span><span class="tile-value" id="q-days">–</span></div>
+        <div class="tile"><span class="tile-label">Daily average</span><span class="tile-value" id="q-avg">–</span></div>
+        <div class="tile"><span class="tile-label">Safe daily budget</span><span class="tile-value" id="q-safe">–</span></div>
+        <div class="tile"><span class="tile-label">Projected run-out</span><span class="tile-value" id="q-runout">–</span></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <h2>Live speed, whole house</h2>
+        <div class="now"><span class="key down"></span><b id="live-down">–</b> down
+          <span class="key up"></span><b id="live-up">–</b> up</div>
+      </div>
+      <div class="chart-box"><canvas id="chart-live" aria-label="Download and upload speed over the last 20 minutes"></canvas></div>
+      <p class="sub" id="live-note"></p>
+    </article>
+  </section>
+
+  <!-- Filters: scope everything below -->
+  <div class="filters" role="group" aria-label="Filters">
+    <div class="seg" id="range-buttons">
+      <button data-range="today">Today</button>
+      <button data-range="7d">7 days</button>
+      <button data-range="cycle" class="on">This cycle</button>
+      <button data-range="prev_cycle">Previous cycle</button>
+    </div>
+    <label>Show <select id="sel-kind">
+      <option value="device">Devices</option>
+      <option value="segment">Router ports &amp; Wi-Fi networks</option>
+    </select></label>
+    <label>Focus <select id="sel-key"><option value="">All (whole house)</option></select></label>
+    <span class="spacer"></span>
+    <a class="btn" id="exp-csv" href="#">Usage CSV</a>
+    <a class="btn" id="exp-dev" href="/api/export/devices.csv">Devices CSV</a>
+    <a class="btn" id="exp-pdf" href="#">PDF report</a>
+  </div>
+
+  <section class="grid two">
+    <article class="card">
+      <div class="card-head"><h2>Top consumers</h2><span class="sub" id="top-sub"></span></div>
+      <div class="chart-box tall"><canvas id="chart-top" aria-label="Devices ranked by data used"></canvas></div>
+      <p class="empty" id="top-empty" hidden></p>
+    </article>
+    <article class="card">
+      <div class="card-head"><h2 id="hist-title">Usage over time</h2><span class="sub" id="hist-sub"></span></div>
+      <div class="chart-box tall"><canvas id="chart-hist" aria-label="Usage over time"></canvas></div>
+      <p class="empty" id="hist-empty" hidden></p>
+    </article>
+  </section>
+
+  <section class="grid two">
+    <article class="card">
+      <div class="card-head"><h2 id="heat-title">When data is used</h2>
+        <div class="ramp"><span>less</span><i></i><i></i><i></i><i></i><i></i><span>more</span></div></div>
+      <div id="heatmap" class="heatmap"></div>
+      <p class="sub">Each cell is one hour, last 14 days. Dark cells between 01:00 and 06:00 usually mean automatic updates or cloud backups.</p>
+    </article>
+    <article class="card">
+      <div class="card-head"><h2>Monthly totals</h2><span class="sub" id="month-sub"></span></div>
+      <div class="chart-box"><canvas id="chart-month" aria-label="Usage per calendar month"></canvas></div>
+      <p class="empty" id="month-empty" hidden></p>
+    </article>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Devices <span class="sub" id="dev-count"></span></h2>
+      <label class="check"><input type="checkbox" id="only-online"> Online only</label>
+    </div>
+    <div class="table-wrap">
+      <table id="dev-table">
+        <thead><tr>
+          <th>Device</th><th>IP</th><th>MAC</th><th>Vendor</th><th>Connection</th>
+          <th class="num">Now</th><th class="num">Today</th><th class="num" id="th-range">This cycle</th>
+          <th>Trusted</th><th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="grid two">
+    <article class="card">
+      <div class="card-head"><h2>Alerts</h2><button id="btn-ack-all" class="btn ghost">Mark all read</button></div>
+      <ul id="alerts" class="alerts"></ul>
+    </article>
+    <article class="card">
+      <div class="card-head"><h2>WE readings vs measured</h2></div>
+      <p class="sub">Enter the "used" figure from the My WE app or my.te.eg now and then. The app compares WE's change with its own measurement.</p>
+      <div class="table-wrap"><table id="readings">
+        <thead><tr><th>When</th><th class="num">WE says used</th><th class="num">WE change</th><th class="num">Measured here</th><th class="num">Difference</th><th></th></tr></thead>
+        <tbody></tbody></table></div>
+    </article>
+  </section>
+
+  <section class="card" id="suspects-card" hidden>
+    <div class="card-head"><h2>Who was online when data was used</h2></div>
+    <p class="sub">For devices that cannot be measured directly. This is circumstantial evidence, not a measurement: "lift" above 1 means the house uses more data than average while that device is online.</p>
+    <div class="table-wrap"><table id="suspects">
+      <thead><tr><th>Device</th><th class="num">Online</th><th class="num">House usage while online</th><th class="num">Share of usage</th><th class="num">Lift</th></tr></thead>
+      <tbody></tbody></table></div>
+  </section>
+</main>
+
+<div id="tooltip" class="tooltip" hidden></div>
+
+<dialog id="dlg-device">
+  <form method="dialog">
+    <h3>Edit device</h3>
+    <p class="sub" id="dd-info"></p>
+    <label>Name <input id="dd-name" maxlength="60" placeholder="e.g. Ahmed's phone"></label>
+    <label>Daily limit (GB, empty = none) <input id="dd-limit" type="number" min="0" step="0.1"></label>
+    <label class="check"><input type="checkbox" id="dd-known"> I recognise this device (trusted)</label>
+    <div class="dlg-actions">
+      <button type="button" class="btn danger" id="dd-forget">Forget device</button>
+      <span class="spacer"></span>
+      <button class="btn ghost" value="cancel">Cancel</button>
+      <button class="btn primary" id="dd-save" value="save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-reading">
+  <form method="dialog">
+    <h3>Add WE reading</h3>
+    <p class="sub">Open the My WE app (or my.te.eg), look at how many GB are used right now, and type that number.</p>
+    <label>GB used according to WE <input id="rd-gb" type="number" min="0" step="0.01" required></label>
+    <label>Note (optional) <input id="rd-note" maxlength="120"></label>
+    <div class="dlg-actions"><span class="spacer"></span>
+      <button class="btn ghost" value="cancel">Cancel</button>
+      <button class="btn primary" value="save">Save</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-settings">
+  <form method="dialog">
+    <h3>Settings</h3>
+    <label>Monthly quota (GB) <input id="st-quota" type="number" min="1" step="1"></label>
+    <label>Billing cycle starts on day <input id="st-day" type="number" min="1" max="31" step="1"></label>
+    <label>Default daily limit per device (GB, 0 = off) <input id="st-daily" type="number" min="0" step="0.1"></label>
+    <label>Spike alert: more than (GB in one hour, 0 = off) <input id="st-spike" type="number" min="0" step="0.1"></label>
+    <label>Overnight alert: more than (GB between 01:00 and 06:00, 0 = off) <input id="st-night" type="number" min="0" step="0.1"></label>
+    <label class="check"><input type="checkbox" id="st-notify"> macOS notifications</label>
+    <div class="dlg-actions">
+      <button type="button" class="btn ghost" id="st-pause">Pause router polling 15 min</button>
+      <span class="spacer"></span>
+      <button class="btn ghost" value="cancel">Cancel</button>
+      <button class="btn primary" value="save">Save</button></div>
+  </form>
+</dialog>
+
+<script src="/static/vendor/chart.umd.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

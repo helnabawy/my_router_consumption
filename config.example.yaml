@@ -1,0 +1,36 @@
+# WE Monitor configuration. Copy to config.yaml and edit.
+# The router password does NOT go here: run  python -m app.cli set-password
+
+timezone: Africa/Cairo
+
+quota:
+  monthly_gb: 250
+  cycle_start_day: 1        # day of the month your WE quota renews (see the My WE app)
+
+router:
+  type: zte                 # zte | none  (none = skip the router, use network scan + UPnP only)
+  url: http://192.168.1.1   # try https://192.168.1.1 if http does not answer
+  username: admin
+  poll_seconds: 60
+  swap_directions: false    # set true if download and upload look reversed for ports / Wi-Fi
+
+collectors:
+  arp_scan:                 # finds devices on any router, no password needed
+    enabled: true
+  local:                    # exact usage of this Mac
+    enabled: true
+  upnp:                     # whole-house total from the router's UPnP counters
+    enabled: true
+  sniff:                    # gateway mode: exact per-device usage when this Mac shares
+    enabled: false          # its internet (README > Gateway mode). Experimental.
+    interface: bridge100
+
+alerts:
+  default_daily_limit_gb: 0 # 0 = no per-device limit unless you set one on the device
+  spike_gb_per_hour: 3
+  night_gb: 2               # alert when 01:00-06:00 usage exceeds this
+  macos_notifications: true
+
+server:
+  host: 127.0.0.1           # keep this: the dashboard has no login
+  port: 8000
